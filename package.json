@@ -4,7 +4,9 @@
   "description": "Functions for working with built-in iterable types",
   "keywords": [
     "collections",
-    "iterable"
+    "iterable",
+    "async-iterable",
+    "modules"
   ],
   "main": "dist/async-iterable-fns.umd.js",
   "module": "dist/async-iterable-fns.es5.js",

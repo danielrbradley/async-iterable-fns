@@ -8,7 +8,7 @@
 [![Dev Dependencies](https://david-dm.org/danielrbradley/async-iterable-fns/dev-status.svg)](https://david-dm.org/danielrbradley/async-iterable-fns?type=dev)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-Really simple functions for working with async iterable types, inspired by F#'s seq module design.
+Really simple functions for working with async iterable types, inspired by F#'s collection modules design.
 
 ## Features
 

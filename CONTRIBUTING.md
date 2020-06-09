@@ -7,8 +7,10 @@ These steps will guide you through contributing to this project:
 - Fork the repo
 - Clone it and install dependencies
 
-		git clone https://github.com/danielrbradley/iterable
-		yarn
+```bash
+git clone https://github.com/danielrbradley/async-iterable-fns
+yarn
+```
 
 Keep in mind that after running `yarn` the git repo is reset. So a good way to cope with this is to have a copy of the folder to push the changes, and the other to try them.
 
