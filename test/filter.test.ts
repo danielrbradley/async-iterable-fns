@@ -22,10 +22,26 @@ test('can filters based on index', async () => {
   expect(await toArray(filter(source(), (x, index) => index % 2 === 0))).toEqual([1, 15])
 })
 
+test('can filter async', async () => {
+  expect(
+    await toArray(
+      filter(init({ start: 1, count: 2 }), (x) => new Promise((resolve) => resolve(x % 2 === 0)))
+    )
+  ).toEqual([2])
+})
+
 test('chaining', async () => {
   expect(
     await init({ start: 1, count: 2 })
       .filter((x) => x % 2 === 0)
+      .toArray()
+  ).toEqual([2])
+})
+
+test('chaining async', async () => {
+  expect(
+    await init({ start: 1, count: 2 })
+      .filter(async (x) => x % 2 === 0)
       .toArray()
   ).toEqual([2])
 })

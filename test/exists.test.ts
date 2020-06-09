@@ -24,6 +24,18 @@ test('matches existance', async () => {
   ).toEqual(true)
 })
 
+test('matches async', async () => {
+  expect(
+    await exists(
+      (async function* () {
+        yield 1
+        yield 2
+      })(),
+      async (x) => x === 1
+    )
+  ).toEqual(true)
+})
+
 test('passes index', async () => {
   expect(
     await exists(
@@ -44,5 +56,16 @@ test('chaining', async () => {
         yield 2
       })()
     ).exists((x) => x === 3)
+  ).toEqual(false)
+})
+
+test('chaining async', async () => {
+  expect(
+    await chain(
+      (async function* (): AsyncIterable<number> {
+        yield 1
+        yield 2
+      })()
+    ).exists(async (x) => x === 3)
   ).toEqual(false)
 })

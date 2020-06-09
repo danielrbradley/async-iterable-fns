@@ -8,7 +8,7 @@
 [![Dev Dependencies](https://david-dm.org/danielrbradley/async-iterable-fns/dev-status.svg)](https://david-dm.org/danielrbradley/async-iterable-fns?type=dev)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-Really simple functions for working with iterable types, inspired by F#'s seq module design.
+Really simple functions for working with async iterable types, inspired by F#'s seq module design.
 
 ## Features
 
@@ -39,43 +39,38 @@ import { groupBy } from 'async-iterable-fns'
 Calculating primes lazily with iterators can either be done by calling each of the basic functions:
 
 ```javascript
-import { count, initRaw, map, filter } from '../src/async-iterable-fns'
+import { count, initRaw, map, filter } from 'async-iterable-fns'
 
-const range = initRaw({ from: 1, to: 100 })
-const mapped = map(range, (x) => ({
-  x,
-  factors: filter(initRaw({ from: 1, to: x }), (y) => x % y === 0),
-}))
-const filtered = filter(mapped, (num) => count(num.factors) === 2)
-const primes = map(filtered, (num) => num.x)
+const findPrimes = async () => {
+  const range = initRaw({ from: 1, to: 100 })
+  const mapped = map(range, (x) => ({
+    x,
+    factors: filter(initRaw({ from: 1, to: x }), (y) => x % y === 0),
+  }))
+  const filtered = filter(mapped, async (num) => (await count(num.factors)) === 2)
+  const primes = map(filtered, (num) => num.x)
+  return await toArray(primes)
+}
 ```
 
-or can utilise the `chain` methods:
+or can utilise the chainable methods:
 
 ```javascript
 import { init } from 'async-iterable-fns'
 
-const primes = init({ from: 1, to: 100 })
-  .map((x) => ({
-    x,
-    factors: init({ from: 1, to: x }).filter((y) => x % y === 0),
-  }))
-  .filter((num) => num.factors.count() === 2)
-  .map((num) => num.x)
+const findPrimesChained = async () => {
+  const primes = init({ from: 1, to: 100 })
+    .map((x) => ({
+      x,
+      factors: init({ from: 1, to: x }).filter((y) => x % y === 0),
+    }))
+    .filter(async (num) => (await num.factors.count()) === 2)
+    .map((num) => num.x)
 
-for (const prime of primes) {
-  console.log(prime)
+  for await (const prime of primes) {
+    console.log(prime)
+  }
 }
-```
-
-Grouping numbers into odd and even buckets
-
-```javascript
-import { init, toArray } from 'async-iterable-fns'
-
-const oddAndEven = init({ from: 1, to: 25 })
-  .groupBy((i) => (i % 2 === 0 ? 'even' : 'odd'))
-  .map(([key, values]) => [key, toArray(values)])
 ```
 
 ## NPM scripts

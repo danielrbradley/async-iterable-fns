@@ -24,6 +24,30 @@ test('groups by key', async () => {
   )
 })
 
+test('groups by async key', async () => {
+  expect(
+    await groupBy(
+      (async function* () {
+        yield { name: 'amy', age: 1 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 2 }
+      })(),
+      async (x) => x.age
+    )
+  ).toEqual(
+    new Map([
+      [1, [{ name: 'amy', age: 1 }]],
+      [
+        2,
+        [
+          { name: 'bob', age: 2 },
+          { name: 'cat', age: 2 },
+        ],
+      ],
+    ])
+  )
+})
+
 test('groups by index', async () => {
   expect(
     await groupBy(
@@ -57,6 +81,29 @@ test('chaining', async () => {
         yield { name: 'cat', age: 2 }
       })()
     ).groupBy((x) => x.age)
+  ).toEqual(
+    new Map([
+      [1, [{ name: 'amy', age: 1 }]],
+      [
+        2,
+        [
+          { name: 'bob', age: 2 },
+          { name: 'cat', age: 2 },
+        ],
+      ],
+    ])
+  )
+})
+
+test('chaining async', async () => {
+  expect(
+    await chain(
+      (async function* () {
+        yield { name: 'amy', age: 1 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 2 }
+      })()
+    ).groupBy(async (x) => x.age)
   ).toEqual(
     new Map([
       [1, [{ name: 'amy', age: 1 }]],

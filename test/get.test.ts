@@ -12,6 +12,18 @@ test('finds match', async () => {
   ).toEqual({ name: 'bob', id: 2 })
 })
 
+test('async match', async () => {
+  expect(
+    await get(
+      (async function* () {
+        yield { name: 'amy', id: 1 }
+        yield { name: 'bob', id: 2 }
+      })(),
+      async (x) => x.name === 'bob'
+    )
+  ).toEqual({ name: 'bob', id: 2 })
+})
+
 test('throws when not found', async () => {
   try {
     await get(
@@ -47,5 +59,16 @@ test('chaining', async () => {
         yield { name: 'bob', id: 2 }
       })()
     ).get((x) => x.name === 'bob')
+  ).toEqual({ name: 'bob', id: 2 })
+})
+
+test('chaining async', async () => {
+  expect(
+    await chain(
+      (async function* () {
+        yield { name: 'amy', id: 1 }
+        yield { name: 'bob', id: 2 }
+      })()
+    ).get(async (x) => x.name === 'bob')
   ).toEqual({ name: 'bob', id: 2 })
 })

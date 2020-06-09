@@ -20,6 +20,26 @@ test('ignores duplicates', async () => {
   ])
 })
 
+test('async selection', async () => {
+  expect(
+    await toArray(
+      distinctBy(
+        (async function* () {
+          yield { name: 'amy', id: 1 }
+          yield { name: 'bob', id: 2 }
+          yield { name: 'bob', id: 3 }
+          yield { name: 'cat', id: 3 }
+        })(),
+        async (x) => x.name
+      )
+    )
+  ).toEqual([
+    { name: 'amy', id: 1 },
+    { name: 'bob', id: 2 },
+    { name: 'cat', id: 3 },
+  ])
+})
+
 test('using index', async () => {
   expect(
     await toArray(
@@ -50,6 +70,25 @@ test('chaining', async () => {
       })()
     )
       .distinctBy((x) => x.name)
+      .toArray()
+  ).toEqual([
+    { name: 'amy', id: 1 },
+    { name: 'bob', id: 2 },
+    { name: 'cat', id: 3 },
+  ])
+})
+
+test('chaining async', async () => {
+  expect(
+    await chain(
+      (async function* () {
+        yield { name: 'amy', id: 1 }
+        yield { name: 'bob', id: 2 }
+        yield { name: 'bob', id: 3 }
+        yield { name: 'cat', id: 3 }
+      })()
+    )
+      .distinctBy(async (x) => x.name)
       .toArray()
   ).toEqual([
     { name: 'amy', id: 1 },

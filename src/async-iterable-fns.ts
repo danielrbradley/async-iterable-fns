@@ -29,11 +29,11 @@ export async function toArray<T>(source: AsyncIterable<T>): Promise<T[]> {
  */
 export async function* map<T, U>(
   source: AsyncIterable<T>,
-  mapping: (item: T, index: number) => U
+  mapping: (item: T, index: number) => U | Promise<U>
 ): AsyncIterable<U> {
   let index = 0
   for await (const item of source) {
-    yield mapping(item, index)
+    yield await mapping(item, index)
     index++
   }
 }
@@ -50,11 +50,11 @@ export async function* map<T, U>(
  */
 export async function* filter<T>(
   source: AsyncIterable<T>,
-  predicate: (item: T, index: number) => boolean
+  predicate: (item: T, index: number) => boolean | Promise<boolean>
 ): AsyncIterable<T> {
   let index = 0
   for await (const item of source) {
-    if (predicate(item, index)) {
+    if (await predicate(item, index)) {
       yield item
     }
     index++
@@ -74,11 +74,11 @@ export async function* filter<T>(
  */
 export async function* choose<T, U>(
   source: AsyncIterable<T>,
-  chooser: (item: T, index: number) => U | undefined
+  chooser: (item: T, index: number) => U | undefined | Promise<U | undefined>
 ): AsyncIterable<U> {
   let index = 0
   for await (const item of source) {
-    const chosen = chooser(item, index)
+    const chosen = await chooser(item, index)
     if (chosen !== undefined) {
       yield chosen
     }
@@ -209,12 +209,12 @@ export async function* distinct<T>(source: AsyncIterable<T>): AsyncIterable<T> {
  */
 export async function* distinctBy<T, Key>(
   source: AsyncIterable<T>,
-  selector: (item: T, index: number) => Key
+  selector: (item: T, index: number) => Key | Promise<Key>
 ): AsyncIterable<T> {
   const seen = new Set<Key>()
   let index = 0
   for await (const item of source) {
-    const key = selector(item, index)
+    const key = await selector(item, index)
     if (!seen.has(key)) {
       seen.add(key)
       yield item
@@ -236,11 +236,11 @@ export async function* distinctBy<T, Key>(
  */
 export async function exists<T>(
   source: AsyncIterable<T>,
-  predicate: (item: T, index: number) => boolean
+  predicate: (item: T, index: number) => boolean | Promise<boolean>
 ): Promise<boolean> {
   let index = 0
   for await (const item of source) {
-    if (predicate(item, index)) {
+    if (await predicate(item, index)) {
       return true
     }
     index++
@@ -261,11 +261,11 @@ export async function exists<T>(
  */
 export async function every<T>(
   source: AsyncIterable<T>,
-  predicate: (item: T, index: number) => boolean
+  predicate: (item: T, index: number) => boolean | Promise<boolean>
 ): Promise<boolean> {
   let index = 0
   for await (const item of source) {
-    if (!predicate(item, index)) {
+    if (!(await predicate(item, index))) {
       return false
     }
     index++
@@ -291,11 +291,11 @@ export async function every<T>(
  */
 export async function get<T>(
   source: AsyncIterable<T>,
-  predicate: (item: T, index: number) => boolean
+  predicate: (item: T, index: number) => boolean | Promise<boolean>
 ): Promise<T> {
   let index = 0
   for await (const item of source) {
-    if (predicate(item, index)) {
+    if (await predicate(item, index)) {
       return item
     }
     index++
@@ -317,11 +317,11 @@ export async function get<T>(
  */
 export async function find<T>(
   source: AsyncIterable<T>,
-  predicate: (item: T, index: number) => boolean
+  predicate: (item: T, index: number) => boolean | Promise<boolean>
 ): Promise<T | undefined> {
   let index = 0
   for await (const item of source) {
-    if (predicate(item, index)) {
+    if (await predicate(item, index)) {
       return item
     }
     index++
@@ -349,12 +349,12 @@ export async function find<T>(
  */
 export async function groupBy<T, Key>(
   source: AsyncIterable<T>,
-  selector: (item: T, index: number) => Key
+  selector: (item: T, index: number) => Key | Promise<Key>
 ): Promise<Map<Key, T[]>> {
   const groups = new Map<Key, T[]>()
   let index = 0
   for await (const item of source) {
-    const key = selector(item, index)
+    const key = await selector(item, index)
     const group = groups.get(key)
     if (group === undefined) {
       groups.set(key, [item])
@@ -888,7 +888,7 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    *   .map((x) => x * 2)
    * // Yields: 2, 4, 6
    */
-  map<U>(mapping: (item: T, index: number) => U): ChainableAsyncIterable<U> {
+  map<U>(mapping: (item: T, index: number) => U | Promise<U>): ChainableAsyncIterable<U> {
     return new ChainableAsyncIterable(map(this.source, mapping))
   }
 
@@ -900,7 +900,9 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    *   .filter((x) => x % 2 === 0)
    * // Yields: 2, 4
    */
-  filter(predicate: (item: T, index: number) => boolean): ChainableAsyncIterable<T> {
+  filter(
+    predicate: (item: T, index: number) => boolean | Promise<boolean>
+  ): ChainableAsyncIterable<T> {
     return new ChainableAsyncIterable(filter(this.source, predicate))
   }
 
@@ -913,7 +915,9 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    *   .choose((x) => (x % 2 === 1 ? x * 2 : undefined))
    * // Yields: 2, 6
    */
-  choose<U>(chooser: (item: T, index: number) => U | undefined): ChainableAsyncIterable<U> {
+  choose<U>(
+    chooser: (item: T, index: number) => U | undefined | Promise<U | undefined>
+  ): ChainableAsyncIterable<U> {
     return new ChainableAsyncIterable(choose(this.source, chooser))
   }
 
@@ -983,7 +987,9 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * // { name: 'bob', id: 2 }
    * // { name: 'cat', id: 3 }
    */
-  distinctBy<Key>(selector: (item: T, index: number) => Key): ChainableAsyncIterable<T> {
+  distinctBy<Key>(
+    selector: (item: T, index: number) => Key | Promise<Key>
+  ): ChainableAsyncIterable<T> {
     return new ChainableAsyncIterable(distinctBy(this.source, selector))
   }
 
@@ -994,7 +1000,7 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * await init({ from: 1, to: 3 }).exists((x) => x === 2) // Returns: true
    * await init({ from: 1, to: 3 }).exists((x) => x === 4) // Returns: false
    */
-  exists(predicate: (item: T, index: number) => boolean): Promise<boolean> {
+  exists(predicate: (item: T, index: number) => boolean | Promise<boolean>): Promise<boolean> {
     return exists(this.source, predicate)
   }
 
@@ -1005,7 +1011,7 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * await init({ from: 1, to: 3 }).every((x) => x > 0) // Returns: true
    * await init({ from: 1, to: 3 }).every((x) => x < 2) // Returns: false
    */
-  every(predicate: (item: T, index: number) => boolean): Promise<boolean> {
+  every(predicate: (item: T, index: number) => boolean | Promise<boolean>): Promise<boolean> {
     return every(this.source, predicate)
   }
 
@@ -1021,7 +1027,7 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * await chain(source()).get((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
    * await chain(source()).get((p) => p.name === 'cat') // Throws: Element not found matching criteria
    */
-  get(predicate: (item: T, index: number) => boolean): Promise<T> {
+  get(predicate: (item: T, index: number) => boolean | Promise<boolean>): Promise<T> {
     return get(this.source, predicate)
   }
 
@@ -1036,7 +1042,7 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * await chain(source()).find((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
    * await chain(source()).find((p) => p.name === 'cat') // Returns: undefined
    */
-  find(predicate: (item: T, index: number) => boolean): Promise<T | undefined> {
+  find(predicate: (item: T, index: number) => boolean | Promise<boolean>): Promise<T | undefined> {
     return find(this.source, predicate)
   }
 
@@ -1055,7 +1061,9 @@ export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
    * // 1, [{ name: 'amy', age: 1 }]
    * // 2, [{ name: 'bob', age: 2 }, { name: 'cat', age: 2 }]
    */
-  groupBy<Key>(selector: (item: T, index: number) => Key): Promise<Map<Key, Iterable<T>>> {
+  groupBy<Key>(
+    selector: (item: T, index: number) => Key | Promise<Key>
+  ): Promise<Map<Key, Iterable<T>>> {
     return groupBy(this.source, selector)
   }
 

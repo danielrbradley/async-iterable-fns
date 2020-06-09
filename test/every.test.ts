@@ -12,6 +12,18 @@ test('matches existance', async () => {
   ).toEqual(true)
 })
 
+test('matches existance', async () => {
+  expect(
+    await every(
+      (async function* () {
+        yield 2
+        yield 4
+      })(),
+      async (x) => x % 2 === 0
+    )
+  ).toEqual(true)
+})
+
 test('matches non-existance', async () => {
   expect(
     await every(
@@ -44,5 +56,16 @@ test('chaining', async () => {
         yield 4
       })()
     ).every((x) => x % 2 === 0)
+  ).toEqual(true)
+})
+
+test('chaining async', async () => {
+  expect(
+    await chain(
+      (async function* () {
+        yield 2
+        yield 4
+      })()
+    ).every(async (x) => x % 2 === 0)
   ).toEqual(true)
 })
