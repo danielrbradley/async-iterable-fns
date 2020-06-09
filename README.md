@@ -1,4 +1,4 @@
-# Iterable Functions
+# Async Iterable Functions
 
 [![npm version](https://badge.fury.io/js/async-iterable-fns.svg)](https://badge.fury.io/js/async-iterable-fns)
 [![GitHub issues](https://img.shields.io/github/issues/danielrbradley/async-iterable-fns.svg)](https://github.com/danielrbradley/async-iterable-fns/issues)
