@@ -8,7 +8,7 @@ const findPrimes = async () => {
   }))
   const filtered = filter(mapped, async (num) => (await count(num.factors)) === 2)
   const primes = map(filtered, (num) => num.x)
-  return await toArray(primes)
+  return toArray(primes)
 }
 
 const findPrimesChained = async () => {
