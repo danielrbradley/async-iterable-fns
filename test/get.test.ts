@@ -1,9 +1,9 @@
 import { get, chain } from '../src/async-iterable-fns'
 
-test('finds match', () => {
+test('finds match', async () => {
   expect(
-    get(
-      (function* () {
+    await get(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
@@ -12,22 +12,25 @@ test('finds match', () => {
   ).toEqual({ name: 'bob', id: 2 })
 })
 
-test('throws when not found', () => {
-  expect(() =>
-    get(
-      (function* () {
+test('throws when not found', async () => {
+  try {
+    await get(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
       (x) => x.name === 'cat'
     )
-  ).toThrow('Element not found matching criteria')
+    throw new Error()
+  } catch (e) {
+    expect(e.message).toEqual('Element not found matching criteria')
+  }
 })
 
-test('finds by index', () => {
+test('finds by index', async () => {
   expect(
-    get(
-      (function* () {
+    await get(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
@@ -36,10 +39,10 @@ test('finds by index', () => {
   ).toEqual({ name: 'bob', id: 2 })
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })()

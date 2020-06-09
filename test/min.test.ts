@@ -1,9 +1,9 @@
-import { min } from '../src/async-iterable-fns'
+import { min, init } from '../src/async-iterable-fns'
 
-test('finds min', () => {
+test('finds min', async () => {
   expect(
-    min(
-      (function* () {
+    await min(
+      (async function* () {
         yield 21
         yield 2
         yield 18
@@ -12,6 +12,11 @@ test('finds min', () => {
   ).toEqual(2)
 })
 
-test('fails on empty collection', () => {
-  expect(() => min([])).toThrow(`Can't find min of an empty collection`)
+test('fails on empty collection', async () => {
+  try {
+    await min(init(0))
+    throw new Error()
+  } catch (e) {
+    expect(e.message).toEqual(`Can't find min of an empty collection`)
+  }
 })

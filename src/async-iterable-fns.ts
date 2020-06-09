@@ -1,17 +1,20 @@
 /**
- * Creates an array from the source iterable object.
- * @param source An Iterable objext to convert to an array.
- * @alias Array.from
+ * Creates an array from the source async-iterable object.
+ * @param source An AsyncIterable objext to convert to an array.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield 1
  *   yield 2
  * }
- * toArray(source())
+ * await toArray(source())
  * // Returns: [1, 2]
  */
-export function toArray<T>(source: Iterable<T>): T[] {
-  return Array.from(source)
+export async function toArray<T>(source: AsyncIterable<T>): Promise<T[]> {
+  const target: T[] = []
+  for await (const item of source) {
+    target.push(item)
+  }
+  return target
 }
 
 /**
@@ -20,16 +23,16 @@ export function toArray<T>(source: Iterable<T>): T[] {
  * @param mapping A function to transform items from the input collection.
  * @example
  * map(
- *   init({ start: 1, count: 3 }),
+ *   init({ from: 1, to: 3 }),
  *   (x) => x * 2
  * ) // Yields: 2, 4, 6
  */
-export function* map<T, U>(
-  source: Iterable<T>,
+export async function* map<T, U>(
+  source: AsyncIterable<T>,
   mapping: (item: T, index: number) => U
-): Iterable<U> {
+): AsyncIterable<U> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     yield mapping(item, index)
     index++
   }
@@ -41,16 +44,16 @@ export function* map<T, U>(
  * @param predicate A function to test whether each item in the input collection should be included in the output.
  * @example
  * filter(
- *   init({ start: 1, count: 4 }),
+ *   init({ from: 1, to: 4 }),
  *   (x) => x % 2 === 0
  * ) // Yields: 2, 4
  */
-export function* filter<T>(
-  source: Iterable<T>,
+export async function* filter<T>(
+  source: AsyncIterable<T>,
   predicate: (item: T, index: number) => boolean
-): Iterable<T> {
+): AsyncIterable<T> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (predicate(item, index)) {
       yield item
     }
@@ -65,16 +68,16 @@ export function* filter<T>(
  * @param chooser A function to transform items from the input collection to a new value to be included, or undefined to be excluded.
  * @example
  * choose(
- *   init({ start: 1, count: 3 }),
+ *   init({ from: 1, to: 3 }),
  *   (x) => (x % 2 === 1 ? x * 2 : undefined)
  * ) // Yields: 2, 6
  */
-export function* choose<T, U>(
-  source: Iterable<T>,
+export async function* choose<T, U>(
+  source: AsyncIterable<T>,
   chooser: (item: T, index: number) => U | undefined
-): Iterable<U> {
+): AsyncIterable<U> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     const chosen = chooser(item, index)
     if (chosen !== undefined) {
       yield chosen
@@ -89,7 +92,7 @@ export function* choose<T, U>(
  * @param mapping A function to transform elements of the input collection into collections that are concatenated.
  * @example
  * collect(
- *   init({ start: 1, count: 3 }),
+ *   init({ from: 1, to: 3 }),
  *   function* (x) {
  *     yield x
  *     yield x
@@ -98,18 +101,18 @@ export function* choose<T, U>(
  *
  * // You can also just return an array from your mapping function
  * collect(
- *   init({ start: 1, count: 3 }),
+ *   init({ from: 1, to: 3 }),
  *   (x) => [x, x]
  * )
  */
-export function* collect<T, U>(
-  source: Iterable<T>,
-  mapping: (item: T, index: number) => Iterable<U>
-): Iterable<U> {
+export async function* collect<T, U>(
+  source: AsyncIterable<T>,
+  mapping: (item: T, index: number) => Iterable<U> | AsyncIterable<U>
+): AsyncIterable<U> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     const children = mapping(item, index)
-    for (const child of children) {
+    for await (const child of children) {
       yield child
     }
     index++
@@ -126,11 +129,14 @@ export function* collect<T, U>(
  *   init({ from: 8, to: 10 })
  * ) // Yields: 1, 2, 3, 8, 9, 10
  */
-export function* append<T>(first: Iterable<T>, second: Iterable<T>): Iterable<T> {
-  for (const item of first) {
+export async function* append<T>(
+  first: AsyncIterable<T>,
+  second: AsyncIterable<T>
+): AsyncIterable<T> {
+  for await (const item of first) {
     yield item
   }
-  for (const item of second) {
+  for await (const item of second) {
     yield item
   }
 }
@@ -145,9 +151,11 @@ export function* append<T>(first: Iterable<T>, second: Iterable<T>): Iterable<T>
  *   init({ from: 8, to: 9 })
  * ]) // Yields 1, 2, 4, 5, 8, 9
  */
-export function* concat<T>(sources: Iterable<Iterable<T>>): Iterable<T> {
-  for (const source of sources) {
-    for (const item of source) {
+export async function* concat<T>(
+  sources: AsyncIterable<Iterable<T> | AsyncIterable<T>> | Iterable<Iterable<T> | AsyncIterable<T>>
+): AsyncIterable<T> {
+  for await (const source of sources) {
+    for await (const item of source) {
       yield item
     }
   }
@@ -159,7 +167,7 @@ export function* concat<T>(sources: Iterable<Iterable<T>>): Iterable<T> {
  * discarded.
  * @param source The input collection.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield 'bob'
  *   yield 'cat'
  *   yield 'bob'
@@ -168,10 +176,10 @@ export function* concat<T>(sources: Iterable<Iterable<T>>): Iterable<T> {
  * distinct(source())
  * // Yields: 'bob', 'cat', 'amy'
  */
-export function* distinct<T>(source: Iterable<T>): Iterable<T> {
+export async function* distinct<T>(source: AsyncIterable<T>): AsyncIterable<T> {
   const seen = new Set<T>()
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (!seen.has(item)) {
       seen.add(item)
       yield item
@@ -187,7 +195,7 @@ export function* distinct<T>(source: Iterable<T>): Iterable<T> {
  * @param source The input collection.
  * @param selector A function that transforms the collection items into comparable keys.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', id: 1 }
  *   yield { name: 'bob', id: 2 }
  *   yield { name: 'bob', id: 3 }
@@ -199,13 +207,13 @@ export function* distinct<T>(source: Iterable<T>): Iterable<T> {
  * // { name: 'bob', id: 2 }
  * // { name: 'cat', id: 3 }
  */
-export function* distinctBy<T, Key>(
-  source: Iterable<T>,
+export async function* distinctBy<T, Key>(
+  source: AsyncIterable<T>,
   selector: (item: T, index: number) => Key
-): Iterable<T> {
+): AsyncIterable<T> {
   const seen = new Set<Key>()
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     const key = selector(item, index)
     if (!seen.has(key)) {
       seen.add(key)
@@ -220,15 +228,18 @@ export function* distinctBy<T, Key>(
  * @param source The input collection.
  * @param predicate A function to test each item of the input collection.
  * @example
- * exists(init({ from: 1, to: 3 }), (x) => x === 2) // Returns: true
- * exists(init({ from: 1, to: 3 }), (x) => x === 4) // Returns: false
+ * await exists(init({ from: 1, to: 3 }), (x) => x === 2)
+ * // Returns: true
+ *
+ * await exists(init({ from: 1, to: 3 }), (x) => x === 4)
+ * // Returns: false
  */
-export function exists<T>(
-  source: Iterable<T>,
+export async function exists<T>(
+  source: AsyncIterable<T>,
   predicate: (item: T, index: number) => boolean
-): boolean {
+): Promise<boolean> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (predicate(item, index)) {
       return true
     }
@@ -242,15 +253,18 @@ export function exists<T>(
  * @param source The input collection.
  * @param predicate A function to test against each item of the input collection.
  * @example
- * every(init({ from: 1, to: 3 }), (x) => x > 0) // Returns: true
- * every(init({ from: 1, to: 3 }), (x) => x < 2) // Returns: false
+ * await every(init({ from: 1, to: 3 }), (x) => x > 0)
+ * // Returns: true
+ *
+ * await every(init({ from: 1, to: 3 }), (x) => x < 2)
+ * // Returns: false
  */
-export function every<T>(
-  source: Iterable<T>,
+export async function every<T>(
+  source: AsyncIterable<T>,
   predicate: (item: T, index: number) => boolean
-): boolean {
+): Promise<boolean> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (!predicate(item, index)) {
       return false
     }
@@ -265,16 +279,22 @@ export function every<T>(
  * @param predicate A function to test whether an item in the collection should be returned.
  * @throws If no item is found matching the criteria of the predicate.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', id: 1 }
  *   yield { name: 'bob', id: 2 }
  * }
- * get(source(), (p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
- * get(source(), (p) => p.name === 'cat') // Throws: Element not found matching criteria
+ * await get(source(), (p) => p.name === 'bob')
+ * // Returns: { name: 'bob', id: 2 }
+ *
+ * await get(source(), (p) => p.name === 'cat')
+ * // Throws: Element not found matching criteria
  */
-export function get<T>(source: Iterable<T>, predicate: (item: T, index: number) => boolean): T {
+export async function get<T>(
+  source: AsyncIterable<T>,
+  predicate: (item: T, index: number) => boolean
+): Promise<T> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (predicate(item, index)) {
       return item
     }
@@ -288,19 +308,19 @@ export function get<T>(source: Iterable<T>, predicate: (item: T, index: number) 
  * @param source The input collection.
  * @param predicate A function to test whether an item in the collection should be returned.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', id: 1 }
  *   yield { name: 'bob', id: 2 }
  * }
- * find(source(), (p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
- * find(source(), (p) => p.name === 'cat') // Returns: undefined
+ * await find(source(), (p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
+ * await find(source(), (p) => p.name === 'cat') // Returns: undefined
  */
-export function find<T>(
-  source: Iterable<T>,
+export async function find<T>(
+  source: AsyncIterable<T>,
   predicate: (item: T, index: number) => boolean
-): T | undefined {
+): Promise<T | undefined> {
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (predicate(item, index)) {
       return item
     }
@@ -317,23 +337,23 @@ export function find<T>(
  * @param source The input collection.
  * @param selector A function that transforms an element of the collection into a comparable key.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', age: 1 }
  *   yield { name: 'bob', age: 2 }
  *   yield { name: 'cat', age: 2 }
  * }
- * groupBy(source(), (x) => x.age)
- * // Yields:
- * // [1, [{ name: 'amy', age: 1 }]]
- * // [2, [{ name: 'bob', age: 2 }, { name: 'cat', age: 2 }]]
+ * await groupBy(source(), (x) => x.age)
+ * // Returns a Map:
+ * // 1, [{ name: 'amy', age: 1 }]
+ * // 2, [{ name: 'bob', age: 2 }, { name: 'cat', age: 2 }]
  */
-export function groupBy<T, Key>(
-  source: Iterable<T>,
+export async function groupBy<T, Key>(
+  source: AsyncIterable<T>,
   selector: (item: T, index: number) => Key
-): Map<Key, T[]> {
+): Promise<Map<Key, T[]>> {
   const groups = new Map<Key, T[]>()
   let index = 0
-  for (const item of source) {
+  for await (const item of source) {
     const key = selector(item, index)
     const group = groups.get(key)
     if (group === undefined) {
@@ -354,10 +374,10 @@ export function groupBy<T, Key>(
  * pairwise(init({ from: 1, to: 4 }))
  * // Yields: [1, 2], [2, 3], [3, 4]
  */
-export function* pairwise<T>(source: Iterable<T>): Iterable<[T, T]> {
+export async function* pairwise<T>(source: AsyncIterable<T>): AsyncIterable<[T, T]> {
   let prev: T | undefined = undefined
   let started = false
-  for (const item of source) {
+  for await (const item of source) {
     if (!started) {
       started = true
     } else {
@@ -389,7 +409,7 @@ export interface InitCount {
  * initRaw({ from: 2, to: 5 }) // Yields: 2, 3, 4, 5
  * initRaw({ from: 0, to: 100, increment: 25 }) // Yields: 0, 25, 50, 75, 100
  */
-export function* initRaw(options: number | InitRange | InitCount): Iterable<number> {
+export async function* initRaw(options: number | InitRange | InitCount): AsyncIterable<number> {
   function normaliseOptions() {
     if (typeof options === 'number') {
       return {
@@ -438,10 +458,10 @@ export function* initRaw(options: number | InitRange | InitCount): Iterable<numb
  * initInfiniteRaw({ start: 99 }) // Yields: 99, 100, 101 ...
  * initInfiniteRaw({ start: 1, increment: -0.5 }) // Yields: 1, 0.5, 0, -0.5, -1, ...
  */
-export function* initInfiniteRaw(options?: {
+export async function* initInfiniteRaw(options?: {
   start?: number
   increment?: number
-}): Iterable<number> {
+}): AsyncIterable<number> {
   const start = options !== undefined && options.start !== undefined ? options.start : 0
   const increment = options !== undefined && options.increment !== undefined ? options.increment : 1
   for (let index = start; true; index += increment) {
@@ -457,9 +477,9 @@ export function* initInfiniteRaw(options?: {
  * skip(init({ from: 1, to: 5}), 2)
  * // Yields: 3, 4, 5
  */
-export function* skip<T>(source: Iterable<T>, count: number): Iterable<T> {
+export async function* skip<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T> {
   let i = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (i >= count) {
       yield item
     } else {
@@ -476,9 +496,9 @@ export function* skip<T>(source: Iterable<T>, count: number): Iterable<T> {
  * take(init({ from: 1, to: 4 }), 2)
  * // Yields: 1, 2
  */
-export function* take<T>(source: Iterable<T>, count: number): Iterable<T> {
+export async function* take<T>(source: AsyncIterable<T>, count: number): AsyncIterable<T> {
   let i = 0
-  for (const item of source) {
+  for await (const item of source) {
     if (i < count) {
       i++
       yield item
@@ -492,12 +512,12 @@ export function* take<T>(source: Iterable<T>, count: number): Iterable<T> {
  * Returns the number of items in the collection.
  * @param source The input collection.
  * @example
- * count(init(5))
+ * await count(init(5))
  * // Returns: 5
  */
-export function count<T>(source: Iterable<T>): number {
+export async function count<T>(source: AsyncIterable<T>): Promise<number> {
   let length = 0
-  for (const _ of source) {
+  for await (const _ of source) {
     length++
   }
   return length
@@ -508,7 +528,7 @@ export function count<T>(source: Iterable<T>): number {
  * @param source The input collection.
  * @alias count
  * @example
- * length(init(5)) // Returns: 5
+ * await length(init(5)) // Returns: 5
  */
 export const length = count
 
@@ -520,20 +540,23 @@ export const length = count
  * @param source The input collection.
  * @param selector An optional function to transform items of the input sequence into comparable keys.
  * @example
- * sort(init({ from 3, to: 1 }))
- * // Yields 1, 2, 3
+ * await sort(init({ from 3, to: 1 }))
+ * // Returns: [1, 2, 3]
  *
- * function* source() {
+ * async function* source() {
  *   yield 'Cat'
  *   yield 'amy'
  *   yield 'BOB'
  * }
- * sort(source(), (n) => n.toLowerCase())
- * // Yields: 'amy', 'BOB', 'Cat'
+ * await sort(source(), (n) => n.toLowerCase())
+ * // Returns: ['amy', 'BOB', 'Cat']
  */
-export function sort<T, Key>(source: Iterable<T>, selector?: (item: T) => Key): Iterable<T> {
+export async function sort<T, Key>(
+  source: AsyncIterable<T>,
+  selector?: (item: T) => Key
+): Promise<T[]> {
   const theSelector = selector === undefined ? (x: T) => x : selector
-  const copy = Array.from(source)
+  const copy = await toArray(source)
   copy.sort((a: T, b: T) => {
     return theSelector(a) > theSelector(b) ? 1 : -1
   })
@@ -548,23 +571,23 @@ export function sort<T, Key>(source: Iterable<T>, selector?: (item: T) => Key): 
  * @param source The input collection.
  * @param selector An optional function to transform items of the input sequence into comparable keys.
  * @example
- * sortDescending(init({ from 1, to: 3 }))
- * // Yields 3, 2, 1
+ * await sortDescending(init({ from 1, to: 3 }))
+ * // Returns: [3, 2, 1]
  *
- * function* source() {
+ * async function* source() {
  *   yield 'Cat'
  *   yield 'amy'
  *   yield 'BOB'
  * }
- * sortDescending(source(), (n) => n.toLowerCase())
- * // Yields: 'Cat', 'BOB', 'amy'
+ * await sortDescending(source(), (n) => n.toLowerCase())
+ * // Returns: ['Cat', 'BOB', 'amy']
  */
-export function sortDescending<T, Key>(
-  source: Iterable<T>,
+export async function sortDescending<T, Key>(
+  source: AsyncIterable<T>,
   selector?: (item: T) => Key
-): Iterable<T> {
+): Promise<T[]> {
   const theSelector = selector === undefined ? (x: T) => x : selector
-  const copy = Array.from(source)
+  const copy = await toArray(source)
   copy.sort((a: T, b: T) => {
     return theSelector(a) < theSelector(b) ? 1 : -1
   })
@@ -578,16 +601,19 @@ export function sortDescending<T, Key>(
  * @param source The input collection.
  * @param selector A function to transform items of the input sequence into comparable keys.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield 'Cat'
  *   yield 'amy'
  *   yield 'BOB'
  * }
- * sortBy(source(), (n) => n.toLowerCase())
- * // Yields: 'amy', 'BOB', 'Cat'
+ * await sortBy(source(), (n) => n.toLowerCase())
+ * // Returns: ['amy', 'BOB', 'Cat']
  */
-export function sortBy<T, Key>(source: Iterable<T>, selector: (item: T) => Key): Iterable<T> {
-  const copy = Array.from(source)
+export async function sortBy<T, Key>(
+  source: AsyncIterable<T>,
+  selector: (item: T) => Key
+): Promise<T[]> {
+  const copy = await toArray(source)
   copy.sort((a: T, b: T) => {
     return selector(a) > selector(b) ? 1 : -1
   })
@@ -601,19 +627,19 @@ export function sortBy<T, Key>(source: Iterable<T>, selector: (item: T) => Key):
  * @param source The input collection.
  * @param selector A function to transform items of the input sequence into comparable keys.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield 'Cat'
  *   yield 'amy'
  *   yield 'BOB'
  * }
- * sortByDescending(source(), (n) => n.toLowerCase())
- * // Yields: 'Cat', 'BOB', 'amy'
+ * await sortByDescending(source(), (n) => n.toLowerCase())
+ * // Returns: ['Cat', 'BOB', 'amy']
  */
-export function sortByDescending<T, Key>(
-  source: Iterable<T>,
+export async function sortByDescending<T, Key>(
+  source: AsyncIterable<T>,
   selector: (item: T) => Key
-): Iterable<T> {
-  const copy = Array.from(source)
+): Promise<T[]> {
+  const copy = await toArray(source)
   copy.sort((a: T, b: T) => {
     return selector(a) > selector(b) ? -1 : 1
   })
@@ -626,31 +652,29 @@ export function sortByDescending<T, Key>(
  * NOTE: Requires complete iteration of source before yielding first element.
  * @param source The input collection.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield 'cat'
  *   yield 'amy'
  *   yield 'bob'
  * }
- * reverse(source())
- * // Yields: 'bob', 'amy', 'cat'
+ * await reverse(source())
+ * // Returns: ['bob', 'amy', 'cat']
  */
-export function* reverse<T>(source: Iterable<T>): Iterable<T> {
-  const asArray = Array.from(source)
-  for (let index = asArray.length - 1; index >= 0; index--) {
-    yield asArray[index]
-  }
+export async function reverse<T>(source: AsyncIterable<T>): Promise<T[]> {
+  const asArray = await toArray(source)
+  return asArray.reverse()
 }
 
 /**
  * Returns the sum of the values in the collection.
  * @param source The input collection.
  * @example
- * sum(init({ from: 5, to: 10 }))
+ * await sum(init({ from: 5, to: 10 }))
  * // Returns: 45
  */
-export function sum(source: Iterable<number>): number {
+export async function sum(source: AsyncIterable<number>): Promise<number> {
   let sum = 0
-  for (const item of source) {
+  for await (const item of source) {
     sum += item
   }
   return sum
@@ -661,17 +685,20 @@ export function sum(source: Iterable<number>): number {
  * @param source The input collection.
  * @param selector A function to transform each element into a summable value.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', age: 21 }
  *   yield { name: 'bob', age: 2 }
  *   yield { name: 'cat', age: 18 }
  * }
- * sumBy(source(), (x) => x.age)
+ * await sumBy(source(), (x) => x.age)
  * // Returns: 41
  */
-export function sumBy<T>(source: Iterable<T>, selector: (item: T) => number): number {
+export async function sumBy<T>(
+  source: AsyncIterable<T>,
+  selector: (item: T) => number
+): Promise<number> {
   let sum = 0
-  for (const item of source) {
+  for await (const item of source) {
     sum += selector(item)
   }
   return sum
@@ -682,12 +709,12 @@ export function sumBy<T>(source: Iterable<T>, selector: (item: T) => number): nu
  * @param source The input collection.
  * @throws If the collection is empty.
  * @example
- * max(init({ from: 5, to: 10 }))
+ * await max(init({ from: 5, to: 10 }))
  * // Returns: 10
  */
-export function max(source: Iterable<number>): number {
+export async function max(source: AsyncIterable<number>): Promise<number> {
   let max: number | null = null
-  for (const item of source) {
+  for await (const item of source) {
     if (max === null || item > max) {
       max = item
     }
@@ -704,17 +731,20 @@ export function max(source: Iterable<number>): number {
  * @param selector A function to transform each element into a comparable value.
  * @throws If the collection is empty.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', age: 21 }
  *   yield { name: 'bob', age: 2 }
  *   yield { name: 'cat', age: 18 }
  * }
- * maxBy(source(), (x) => x.age)
+ * await maxBy(source(), (x) => x.age)
  * // Returns: 21
  */
-export function maxBy<T>(source: Iterable<T>, selector: (item: T) => number): number {
+export async function maxBy<T>(
+  source: AsyncIterable<T>,
+  selector: (item: T) => number
+): Promise<number> {
   let max: number | null = null
-  for (const item of source) {
+  for await (const item of source) {
     const value = selector(item)
     if (max === null || value > max) {
       max = value
@@ -731,12 +761,12 @@ export function maxBy<T>(source: Iterable<T>, selector: (item: T) => number): nu
  * @param source The input collection.
  * @throws If the collection is empty.
  * @example
- * min(init({ from: 5, to: 10 }))
+ * await min(init({ from: 5, to: 10 }))
  * // Returns: 5
  */
-export function min(source: Iterable<number>): number {
+export async function min(source: AsyncIterable<number>): Promise<number> {
   let min: number | null = null
-  for (const item of source) {
+  for await (const item of source) {
     if (min === null || item < min) {
       min = item
     }
@@ -753,17 +783,20 @@ export function min(source: Iterable<number>): number {
  * @param selector A function to transform each element into a comparable value.
  * @throws If the collection is empty.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', age: 21 }
  *   yield { name: 'bob', age: 2 }
  *   yield { name: 'cat', age: 18 }
  * }
- * minBy(source(), (x) => x.age)
+ * await minBy(source(), (x) => x.age)
  * // Returns: 2
  */
-export function minBy<T>(source: Iterable<T>, selector: (item: T) => number): number {
+export async function minBy<T>(
+  source: AsyncIterable<T>,
+  selector: (item: T) => number
+): Promise<number> {
   let min: number | null = null
-  for (const item of source) {
+  for await (const item of source) {
     const value = selector(item)
     if (min === null || value < min) {
       min = value
@@ -780,13 +813,13 @@ export function minBy<T>(source: Iterable<T>, selector: (item: T) => number): nu
  * @param source The input collection.
  * @throws If the collection is empty.
  * @example
- * mean(init({ from: 5, to: 10 }))
+ * await mean(init({ from: 5, to: 10 }))
  * // Returns: 7.5
  */
-export function mean(source: Iterable<number>): number {
+export async function mean(source: AsyncIterable<number>): Promise<number> {
   let sum = 0
   let count = 0
-  for (const item of source) {
+  for await (const item of source) {
     sum += item
     count++
   }
@@ -802,19 +835,22 @@ export function mean(source: Iterable<number>): number {
  * @param selector A function to transform each element into a summable value.
  * @throws If the collection is empty.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'amy', age: 21 }
  *   yield { name: 'bob', age: 2 }
  *   yield { name: 'cat', age: 18 }
  *   yield { name: 'dot', age: 39 }
  * }
- * meanBy(source(), (x) => x.age)
+ * await meanBy(source(), (x) => x.age)
  * // Returns: 20
  */
-export function meanBy<T>(source: Iterable<T>, selector: (item: T) => number): number {
+export async function meanBy<T>(
+  source: AsyncIterable<T>,
+  selector: (item: T) => number
+): Promise<number> {
   let sum = 0
   let count = 0
-  for (const item of source) {
+  for await (const item of source) {
     sum += selector(item)
     count++
   }
@@ -824,24 +860,24 @@ export function meanBy<T>(source: Iterable<T>, selector: (item: T) => number): n
   return sum / count
 }
 
-export class ChainableIterable<T> implements Iterable<T> {
-  private source: Iterable<T>
-  constructor(source: Iterable<T>) {
+export class ChainableAsyncIterable<T> implements AsyncIterable<T> {
+  private source: AsyncIterable<T>
+  constructor(source: AsyncIterable<T>) {
     this.source = source
   }
 
-  [Symbol.iterator](): Iterator<T, any, undefined> {
-    return this.source[Symbol.iterator]()
+  [Symbol.asyncIterator](): AsyncIterator<T, any, undefined> {
+    return this.source[Symbol.asyncIterator]()
   }
 
   /**
    * Creates an array from the source iterable object.
    * @example
-   * init(3).toArray()
+   * await init(3).toArray()
    * // Returns: [0, 1, 2]
    */
-  toArray(): T[] {
-    return Array.from(this.source)
+  toArray(): Promise<T[]> {
+    return toArray(this.source)
   }
 
   /**
@@ -852,8 +888,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    *   .map((x) => x * 2)
    * // Yields: 2, 4, 6
    */
-  map<U>(mapping: (item: T, index: number) => U): ChainableIterable<U> {
-    return new ChainableIterable(map(this.source, mapping))
+  map<U>(mapping: (item: T, index: number) => U): ChainableAsyncIterable<U> {
+    return new ChainableAsyncIterable(map(this.source, mapping))
   }
 
   /**
@@ -864,8 +900,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    *   .filter((x) => x % 2 === 0)
    * // Yields: 2, 4
    */
-  filter(predicate: (item: T, index: number) => boolean): ChainableIterable<T> {
-    return new ChainableIterable(filter(this.source, predicate))
+  filter(predicate: (item: T, index: number) => boolean): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(filter(this.source, predicate))
   }
 
   /**
@@ -877,8 +913,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    *   .choose((x) => (x % 2 === 1 ? x * 2 : undefined))
    * // Yields: 2, 6
    */
-  choose<U>(chooser: (item: T, index: number) => U | undefined): ChainableIterable<U> {
-    return new ChainableIterable(choose(this.source, chooser))
+  choose<U>(chooser: (item: T, index: number) => U | undefined): ChainableAsyncIterable<U> {
+    return new ChainableAsyncIterable(choose(this.source, chooser))
   }
 
   /**
@@ -893,8 +929,10 @@ export class ChainableIterable<T> implements Iterable<T> {
    * init({ start: 1, count: 3 })
    *   .collect((x) => [x, x])
    */
-  collect<U>(mapping: (item: T, index: number) => Iterable<U>): ChainableIterable<U> {
-    return new ChainableIterable(collect(this.source, mapping))
+  collect<U>(
+    mapping: (item: T, index: number) => Iterable<U> | AsyncIterable<U>
+  ): ChainableAsyncIterable<U> {
+    return new ChainableAsyncIterable(collect(this.source, mapping))
   }
 
   /**
@@ -905,8 +943,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    *   .append(init({ from: 8, to: 10 }))
    * // Yields: 1, 2, 3, 8, 9, 10
    */
-  append(second: Iterable<T>): ChainableIterable<T> {
-    return new ChainableIterable(append(this.source, second))
+  append(second: AsyncIterable<T>): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(append(this.source, second))
   }
 
   /**
@@ -914,7 +952,7 @@ export class ChainableIterable<T> implements Iterable<T> {
    * the elements. If an element occurs multiple times in the sequence then the later occurrences are
    * discarded.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield 'bob'
    *   yield 'cat'
    *   yield 'bob'
@@ -923,8 +961,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    * chain(source()).distinct()
    * // Yields: 'bob', 'cat', 'amy'
    */
-  distinct(): ChainableIterable<T> {
-    return new ChainableIterable(distinct(this.source))
+  distinct(): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(distinct(this.source))
   }
 
   /**
@@ -933,7 +971,7 @@ export class ChainableIterable<T> implements Iterable<T> {
    * the sequence then the later occurrences are discarded.
    * @param selector A function that transforms the collection items into comparable keys.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', id: 1 }
    *   yield { name: 'bob', id: 2 }
    *   yield { name: 'bob', id: 3 }
@@ -945,18 +983,18 @@ export class ChainableIterable<T> implements Iterable<T> {
    * // { name: 'bob', id: 2 }
    * // { name: 'cat', id: 3 }
    */
-  distinctBy<Key>(selector: (item: T, index: number) => Key): ChainableIterable<T> {
-    return new ChainableIterable(distinctBy(this.source, selector))
+  distinctBy<Key>(selector: (item: T, index: number) => Key): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(distinctBy(this.source, selector))
   }
 
   /**
    * Tests if any element of the collection satisfies the given predicate.
    * @param predicate A function to test each item of the input collection.
    * @example
-   * init({ from: 1, to: 3 }).exists((x) => x === 2) // Returns: true
-   * init({ from: 1, to: 3 }).exists((x) => x === 4) // Returns: false
+   * await init({ from: 1, to: 3 }).exists((x) => x === 2) // Returns: true
+   * await init({ from: 1, to: 3 }).exists((x) => x === 4) // Returns: false
    */
-  exists(predicate: (item: T, index: number) => boolean): boolean {
+  exists(predicate: (item: T, index: number) => boolean): Promise<boolean> {
     return exists(this.source, predicate)
   }
 
@@ -964,10 +1002,10 @@ export class ChainableIterable<T> implements Iterable<T> {
    * Tests if every element of the collection satisfies the given predicate.
    * @param predicate A function to test against each item of the input collection.
    * @example
-   * init({ from: 1, to: 3 }).every((x) => x > 0) // Returns: true
-   * init({ from: 1, to: 3 }).every((x) => x < 2) // Returns: false
+   * await init({ from: 1, to: 3 }).every((x) => x > 0) // Returns: true
+   * await init({ from: 1, to: 3 }).every((x) => x < 2) // Returns: false
    */
-  every(predicate: (item: T, index: number) => boolean): boolean {
+  every(predicate: (item: T, index: number) => boolean): Promise<boolean> {
     return every(this.source, predicate)
   }
 
@@ -976,14 +1014,14 @@ export class ChainableIterable<T> implements Iterable<T> {
    * @param predicate A function to test whether an item in the collection should be returned.
    * @throws If no item is found matching the criteria of the predicate.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', id: 1 }
    *   yield { name: 'bob', id: 2 }
    * }
-   * chain(source()).get((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
-   * chain(source()).get((p) => p.name === 'cat') // Throws: Element not found matching criteria
+   * await chain(source()).get((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
+   * await chain(source()).get((p) => p.name === 'cat') // Throws: Element not found matching criteria
    */
-  get(predicate: (item: T, index: number) => boolean): T {
+  get(predicate: (item: T, index: number) => boolean): Promise<T> {
     return get(this.source, predicate)
   }
 
@@ -991,14 +1029,14 @@ export class ChainableIterable<T> implements Iterable<T> {
    * Returns the first element for which the given function returns true, otherwise undefined.
    * @param predicate A function to test whether an item in the collection should be returned.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', id: 1 }
    *   yield { name: 'bob', id: 2 }
    * }
-   * chain(source()).find((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
-   * chain(source()).find((p) => p.name === 'cat') // Returns: undefined
+   * await chain(source()).find((p) => p.name === 'bob') // Returns: { name: 'bob', id: 2 }
+   * await chain(source()).find((p) => p.name === 'cat') // Returns: undefined
    */
-  find(predicate: (item: T, index: number) => boolean): T | undefined {
+  find(predicate: (item: T, index: number) => boolean): Promise<T | undefined> {
     return find(this.source, predicate)
   }
 
@@ -1007,18 +1045,18 @@ export class ChainableIterable<T> implements Iterable<T> {
    * keys and an array of all elements that have each key.
    * @param selector A function that transforms an element of the collection into a comparable key.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', age: 1 }
    *   yield { name: 'bob', age: 2 }
    *   yield { name: 'cat', age: 2 }
    * }
-   * chain(source()).groupBy((x) => x.age)
-   * // Yields:
-   * // [1, [{ name: 'amy', age: 1 }]]
-   * // [2, [{ name: 'bob', age: 2 }, { name: 'cat', age: 2 }]]
+   * await chain(source()).groupBy((x) => x.age)
+   * // Returns the Map:
+   * // 1, [{ name: 'amy', age: 1 }]
+   * // 2, [{ name: 'bob', age: 2 }, { name: 'cat', age: 2 }]
    */
-  groupBy<Key>(selector: (item: T, index: number) => Key): ChainableIterable<[Key, Iterable<T>]> {
-    return new ChainableIterable(groupBy(this.source, selector))
+  groupBy<Key>(selector: (item: T, index: number) => Key): Promise<Map<Key, Iterable<T>>> {
+    return groupBy(this.source, selector)
   }
 
   /**
@@ -1028,8 +1066,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    * init({ from: 1, to: 4 }).pairwise()
    * // Yields: [1, 2], [2, 3], [3, 4]
    */
-  pairwise(): ChainableIterable<[T, T]> {
-    return new ChainableIterable(pairwise(this.source))
+  pairwise(): ChainableAsyncIterable<[T, T]> {
+    return new ChainableAsyncIterable(pairwise(this.source))
   }
 
   /**
@@ -1039,8 +1077,8 @@ export class ChainableIterable<T> implements Iterable<T> {
    * init({ from: 1, to: 5}).skip(2)
    * // Yields: 3, 4, 5
    */
-  skip(count: number): ChainableIterable<T> {
-    return new ChainableIterable(skip(this.source, count))
+  skip(count: number): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(skip(this.source, count))
   }
 
   /**
@@ -1050,27 +1088,27 @@ export class ChainableIterable<T> implements Iterable<T> {
    * init({ from: 1, to: 4 }).take(2)
    * // Yields: 1, 2
    */
-  take(count: number): ChainableIterable<T> {
-    return new ChainableIterable(take(this.source, count))
+  take(count: number): ChainableAsyncIterable<T> {
+    return new ChainableAsyncIterable(take(this.source, count))
   }
 
   /**
    * Returns the number of items in the collection.
    * @example
-   * init(5).count()
+   * await init(5).count()
    * // Returns: 5
    */
-  count(): number {
+  count(): Promise<number> {
     return count(this.source)
   }
 
   /**
    * Returns the number of items in the collection.
    * @example
-   * init(5).length()
+   * await init(5).length()
    * // Returns: 5
    */
-  length(): number {
+  length(): Promise<number> {
     return count(this.source)
   }
 
@@ -1082,32 +1120,32 @@ export class ChainableIterable<T> implements Iterable<T> {
    * init({ from 3, to: 1 }).sort()
    * // Yields 1, 2, 3
    *
-   * function* source() {
+   * async function* source() {
    *   yield 'Cat'
    *   yield 'amy'
    *   yield 'BOB'
    * }
-   * chain(source()).sort((n) => n.toLowerCase())
-   * // Yields: 'amy', 'BOB', 'Cat'
+   * await chain(source()).sort((n) => n.toLowerCase())
+   * // Returns: ['amy', 'BOB', 'Cat']
    */
-  sort<Key>(selector?: (item: T) => Key): ChainableIterable<T> {
-    return new ChainableIterable(sort(this.source, selector))
+  sort<Key>(selector?: (item: T) => Key): Promise<T[]> {
+    return sort(this.source, selector)
   }
 
   /**
    * Applies a key-generating function to each element of the collection and yields an iterable ordered by keys.
    * @param selector A function to transform items of the input sequence into comparable keys.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield 'Cat'
    *   yield 'amy'
    *   yield 'BOB'
    * }
-   * chain(source()).sortBy((n) => n.toLowerCase())
-   * // Yields: 'amy', 'BOB', 'Cat'
+   * await chain(source()).sortBy((n) => n.toLowerCase())
+   * // Returns: ['amy', 'BOB', 'Cat']
    */
-  sortBy<Key>(selector: (item: T) => Key): ChainableIterable<T> {
-    return new ChainableIterable(sortBy(this.source, selector))
+  sortBy<Key>(selector: (item: T) => Key): Promise<T[]> {
+    return sortBy(this.source, selector)
   }
 
   /**
@@ -1115,65 +1153,65 @@ export class ChainableIterable<T> implements Iterable<T> {
    * If no selector is specified, the elements will be compared directly.
    * @param selector An optional function to transform items of the input sequence into comparable keys.
    * @example
-   * init({ from 1, to: 3 }).sortDescending()
-   * // Yields 3, 2, 1
+   * await init({ from 1, to: 3 }).sortDescending()
+   * // Returns [3, 2, 1]
    *
-   * function* source() {
+   * async function* source() {
    *   yield 'Cat'
    *   yield 'amy'
    *   yield 'BOB'
    * }
-   * chain(source()).sortDescending((n) => n.toLowerCase())
-   * // Yields: 'Cat', 'BOB', 'amy'
+   * await chain(source()).sortDescending((n) => n.toLowerCase())
+   * // Returns: ['Cat', 'BOB', 'amy']
    */
-  sortDescending<Key>(selector?: (item: T) => Key): ChainableIterable<T> {
-    return new ChainableIterable(sortDescending(this.source, selector))
+  sortDescending<Key>(selector?: (item: T) => Key): Promise<T[]> {
+    return sortDescending(this.source, selector)
   }
 
   /**
    * Applies a key-generating function to each element of the collection and yields an iterable ordered by keys, descending.
    * @param selector A function to transform items of the input sequence into comparable keys.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield 'Cat'
    *   yield 'amy'
    *   yield 'BOB'
    * }
-   * chain(source()).sortByDescending((n) => n.toLowerCase())
-   * // Yields: 'Cat', 'BOB', 'amy'
+   * await chain(source()).sortByDescending((n) => n.toLowerCase())
+   * // Returns: ['Cat', 'BOB', 'amy']
    */
-  sortByDescending<Key>(selector: (item: T) => Key): ChainableIterable<T> {
-    return new ChainableIterable(sortByDescending(this.source, selector))
+  sortByDescending<Key>(selector: (item: T) => Key): Promise<T[]> {
+    return sortByDescending(this.source, selector)
   }
 
   /**
    * Yields each element of the iterable in reverse order.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield 'cat'
    *   yield 'amy'
    *   yield 'bob'
    * }
-   * chain(source()).reverse()
-   * // Yields: 'bob', 'amy', 'cat'
+   * await chain(source()).reverse()
+   * // Returns: ['bob', 'amy', 'cat']
    */
-  reverse(): ChainableIterable<T> {
-    return new ChainableIterable(reverse(this.source))
+  reverse(): Promise<T[]> {
+    return reverse(this.source)
   }
 
   /**
    * Returns the sum of the values returned by the selector for each element in the collection.
    * @param selector A function to transform each element into a summable value.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', age: 21 }
    *   yield { name: 'bob', age: 2 }
    *   yield { name: 'cat', age: 18 }
    * }
-   * chain(source()).sumBy((x) => x.age)
+   * await chain(source()).sumBy((x) => x.age)
    * // Returns: 41
    */
-  sumBy(selector: (item: T) => number): number {
+  sumBy(selector: (item: T) => number): Promise<number> {
     return sumBy(this.source, selector)
   }
 
@@ -1182,15 +1220,15 @@ export class ChainableIterable<T> implements Iterable<T> {
    * @param selector A function to transform each element into a comparable value.
    * @throws If the collection is empty.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', age: 21 }
    *   yield { name: 'bob', age: 2 }
    *   yield { name: 'cat', age: 18 }
    * }
-   * chain(source()).maxBy((x) => x.age)
+   * await chain(source()).maxBy((x) => x.age)
    * // Returns: 21
    */
-  maxBy(selector: (item: T) => number): number {
+  maxBy(selector: (item: T) => number): Promise<number> {
     return maxBy(this.source, selector)
   }
 
@@ -1199,15 +1237,15 @@ export class ChainableIterable<T> implements Iterable<T> {
    * @param selector A function to transform each element into a comparable value.
    * @throws If the collection is empty.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', age: 21 }
    *   yield { name: 'bob', age: 2 }
    *   yield { name: 'cat', age: 18 }
    * }
-   * chain(source()).minBy((x) => x.age)
+   * await chain(source()).minBy((x) => x.age)
    * // Returns: 2
    */
-  minBy(selector: (item: T) => number): number {
+  minBy(selector: (item: T) => number): Promise<number> {
     return minBy(this.source, selector)
   }
 
@@ -1216,16 +1254,16 @@ export class ChainableIterable<T> implements Iterable<T> {
    * @param selector A function to transform each element into a summable value.
    * @throws If the collection is empty.
    * @example
-   * function* source() {
+   * async function* source() {
    *   yield { name: 'amy', age: 21 }
    *   yield { name: 'bob', age: 2 }
    *   yield { name: 'cat', age: 18 }
    *   yield { name: 'dot', age: 39 }
    * }
-   * chain(source()).meanBy((x) => x.age)
+   * await chain(source()).meanBy((x) => x.age)
    * // Returns: 20
    */
-  meanBy(selector: (item: T) => number): number {
+  meanBy(selector: (item: T) => number): Promise<number> {
     return meanBy(this.source, selector)
   }
 }
@@ -1241,8 +1279,8 @@ export class ChainableIterable<T> implements Iterable<T> {
  * init({ from: 0, to: 100, increment: 25 })
  * // Yields: 0, 25, 50, 75, 100
  */
-export function init(options: number | InitRange | InitCount): ChainableIterable<number> {
-  return new ChainableIterable(initRaw(options))
+export function init(options: number | InitRange | InitCount): ChainableAsyncIterable<number> {
+  return new ChainableAsyncIterable(initRaw(options))
 }
 
 /**
@@ -1251,31 +1289,30 @@ export function init(options: number | InitRange | InitCount): ChainableIterable
  * @example
  * initInfinite() // Yields: 0, 1, 2, ...
  * initInfinite({ start: 99 }) // Yields: 99, 100, 101 ...
- * initInfinite({ start: 1, increment: -0.5 })
- * // Yields: 1, 0.5, 0, -0.5, -1, ...
+ * initInfinite({ start: 1, increment: -0.5 }) // Yields: 1, 0.5, 0, -0.5, -1, ...
  */
 export function initInfinite(options?: {
   start?: number
   increment?: number
-}): ChainableIterable<number> {
-  return new ChainableIterable(initInfiniteRaw(options))
+}): ChainableAsyncIterable<number> {
+  return new ChainableAsyncIterable(initInfiniteRaw(options))
 }
 
 /**
  * Create a new chainable iterator from an existing iterable source.
  * @param source The input collection.
  * @example
- * function* source() {
+ * async function* source() {
  *   yield { name: 'CAT', age: 18 }
  *   yield { name: 'Amy', age: 21 }
  *   yield { name: 'bob', age: 2 }
  * }
- * chain(source())
+ * await chain(source())
  *   .filter((x) => x.age >= 18)
  *   .map((x) => x.name)
  *   .sortBy((x) => x.toLowerCase())
  *   .toArray()
  */
-export function chain<T>(source: Iterable<T>): ChainableIterable<T> {
-  return new ChainableIterable(source)
+export function chain<T>(source: AsyncIterable<T>): ChainableAsyncIterable<T> {
+  return new ChainableAsyncIterable(source)
 }

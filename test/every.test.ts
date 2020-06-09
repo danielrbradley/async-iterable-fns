@@ -1,9 +1,9 @@
 import { every, chain } from '../src/async-iterable-fns'
 
-test('matches existance', () => {
+test('matches existance', async () => {
   expect(
-    every(
-      (function* () {
+    await every(
+      (async function* () {
         yield 2
         yield 4
       })(),
@@ -12,10 +12,10 @@ test('matches existance', () => {
   ).toEqual(true)
 })
 
-test('matches non-existance', () => {
+test('matches non-existance', async () => {
   expect(
-    every(
-      (function* () {
+    await every(
+      (async function* () {
         yield 1
         yield 2
       })(),
@@ -24,10 +24,10 @@ test('matches non-existance', () => {
   ).toEqual(false)
 })
 
-test('passes index', () => {
+test('passes index', async () => {
   expect(
-    every(
-      (function* () {
+    await every(
+      (async function* () {
         yield 1
         yield 2
       })(),
@@ -36,10 +36,10 @@ test('passes index', () => {
   ).toEqual(true)
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield 2
         yield 4
       })()

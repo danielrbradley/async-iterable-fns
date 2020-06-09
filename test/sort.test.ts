@@ -1,34 +1,38 @@
 import { sort, chain } from '../src/async-iterable-fns'
 
-test('numbers', () => {
-  expect(Array.from(sort([21, 2, 18]))).toEqual([2, 18, 21])
+test('numbers', async () => {
+  expect(
+    await sort(
+      (async function* () {
+        yield 21
+        yield 2
+        yield 18
+      })()
+    )
+  ).toEqual([2, 18, 21])
 })
 
-test('strings', () => {
+test('strings', async () => {
   expect(
-    Array.from(
-      sort(
-        (function* () {
-          yield 'cat'
-          yield 'amy'
-          yield 'bob'
-        })()
-      )
+    await sort(
+      (async function* () {
+        yield 'cat'
+        yield 'amy'
+        yield 'bob'
+      })()
     )
   ).toEqual(['amy', 'bob', 'cat'])
 })
 
-test('with key selector', () => {
+test('with key selector', async () => {
   expect(
-    Array.from(
-      sort(
-        (function* () {
-          yield { name: 'amy', age: 21 }
-          yield { name: 'bob', age: 2 }
-          yield { name: 'cat', age: 18 }
-        })(),
-        (x) => x.age
-      )
+    await sort(
+      (async function* () {
+        yield { name: 'amy', age: 21 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 18 }
+      })(),
+      (x) => x.age
     )
   ).toEqual([
     { name: 'bob', age: 2 },
@@ -37,16 +41,14 @@ test('with key selector', () => {
   ])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield 'cat'
         yield 'amy'
         yield 'bob'
       })()
-    )
-      .sort()
-      .toArray()
+    ).sort()
   ).toEqual(['amy', 'bob', 'cat'])
 })

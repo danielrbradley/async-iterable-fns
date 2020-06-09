@@ -1,9 +1,9 @@
 import { exists, chain } from '../src/async-iterable-fns'
 
-test('matches non-existance', () => {
+test('matches non-existance', async () => {
   expect(
-    exists(
-      (function* (): Generator<number> {
+    await exists(
+      (async function* (): AsyncIterable<number> {
         yield 1
         yield 2
       })(),
@@ -12,10 +12,10 @@ test('matches non-existance', () => {
   ).toEqual(false)
 })
 
-test('matches existance', () => {
+test('matches existance', async () => {
   expect(
-    exists(
-      (function* () {
+    await exists(
+      (async function* () {
         yield 1
         yield 2
       })(),
@@ -24,10 +24,10 @@ test('matches existance', () => {
   ).toEqual(true)
 })
 
-test('passes index', () => {
+test('passes index', async () => {
   expect(
-    exists(
-      (function* () {
+    await exists(
+      (async function* () {
         yield 1
         yield 2
       })(),
@@ -36,10 +36,10 @@ test('passes index', () => {
   ).toEqual(true)
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* (): Generator<number> {
+    await chain(
+      (async function* (): AsyncIterable<number> {
         yield 1
         yield 2
       })()

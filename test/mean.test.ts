@@ -1,9 +1,9 @@
-import { mean } from '../src/async-iterable-fns'
+import { mean, init } from '../src/async-iterable-fns'
 
-test('finds mean', () => {
+test('finds mean', async () => {
   expect(
-    mean(
-      (function* () {
+    await mean(
+      (async function* () {
         yield 21
         yield 2
         yield 18
@@ -13,6 +13,11 @@ test('finds mean', () => {
   ).toEqual(20)
 })
 
-test('fails on empty collection', () => {
-  expect(() => mean([])).toThrow(`Can't find mean of an empty collection`)
+test('fails on empty collection', async () => {
+  try {
+    await mean(init(0))
+    throw new Error()
+  } catch (e) {
+    expect(e.message).toEqual(`Can't find mean of an empty collection`)
+  }
 })

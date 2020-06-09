@@ -1,9 +1,9 @@
-import { minBy, chain } from '../src/async-iterable-fns'
+import { minBy, chain, init } from '../src/async-iterable-fns'
 
-test('finds min age', () => {
+test('finds min age', async () => {
   expect(
-    minBy(
-      (function* () {
+    await minBy(
+      (async function* () {
         yield { name: 'amy', age: 21 }
         yield { name: 'bob', age: 2 }
         yield { name: 'cat', age: 18 }
@@ -13,14 +13,18 @@ test('finds min age', () => {
   ).toEqual(2)
 })
 
-test('fails on empty collection', () => {
-  expect(() => minBy([], (x) => x)).toThrow(`Can't find min of an empty collection`)
+test('fails on empty collection', async () => {
+  try {
+    await minBy(init(0), (x) => x)
+  } catch (e) {
+    expect(e.message).toEqual(`Can't find min of an empty collection`)
+  }
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', age: 21 }
         yield { name: 'bob', age: 2 }
         yield { name: 'cat', age: 18 }

@@ -1,72 +1,72 @@
-import { groupBy, chain } from '../src/async-iterable-fns'
+import { groupBy, chain, toArray } from '../src/async-iterable-fns'
 
-test('groups by key', () => {
+test('groups by key', async () => {
   expect(
-    Array.from(
-      groupBy(
-        (function* () {
-          yield { name: 'amy', age: 1 }
-          yield { name: 'bob', age: 2 }
-          yield { name: 'cat', age: 2 }
-        })(),
-        (x) => x.age
-      )
+    await groupBy(
+      (async function* () {
+        yield { name: 'amy', age: 1 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 2 }
+      })(),
+      (x) => x.age
     )
-  ).toEqual([
-    [1, [{ name: 'amy', age: 1 }]],
-    [
-      2,
+  ).toEqual(
+    new Map([
+      [1, [{ name: 'amy', age: 1 }]],
       [
-        { name: 'bob', age: 2 },
-        { name: 'cat', age: 2 },
+        2,
+        [
+          { name: 'bob', age: 2 },
+          { name: 'cat', age: 2 },
+        ],
       ],
-    ],
-  ])
+    ])
+  )
 })
 
-test('groups by index', () => {
+test('groups by index', async () => {
   expect(
-    Array.from(
-      groupBy(
-        (function* () {
-          yield { name: 'amy', age: 1 }
-          yield { name: 'bob', age: 2 }
-          yield { name: 'cat', age: 2 }
-        })(),
-        (x, index) => index % 2
-      )
+    await groupBy(
+      (async function* () {
+        yield { name: 'amy', age: 1 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 2 }
+      })(),
+      (x, index) => index % 2
     )
-  ).toEqual([
-    [
-      0,
+  ).toEqual(
+    new Map([
       [
-        { name: 'amy', age: 1 },
-        { name: 'cat', age: 2 },
+        0,
+        [
+          { name: 'amy', age: 1 },
+          { name: 'cat', age: 2 },
+        ],
       ],
-    ],
-    [1, [{ name: 'bob', age: 2 }]],
-  ])
+      [1, [{ name: 'bob', age: 2 }]],
+    ])
+  )
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', age: 1 }
         yield { name: 'bob', age: 2 }
         yield { name: 'cat', age: 2 }
       })()
-    )
-      .groupBy((x) => x.age)
-      .toArray()
-  ).toEqual([
-    [1, [{ name: 'amy', age: 1 }]],
-    [
-      2,
+    ).groupBy((x) => x.age)
+  ).toEqual(
+    new Map([
+      [1, [{ name: 'amy', age: 1 }]],
       [
-        { name: 'bob', age: 2 },
-        { name: 'cat', age: 2 },
+        2,
+        [
+          { name: 'bob', age: 2 },
+          { name: 'cat', age: 2 },
+        ],
       ],
-    ],
-  ])
+    ])
+  )
 })

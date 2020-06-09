@@ -1,9 +1,9 @@
 import { find, chain } from '../src/async-iterable-fns'
 
-test('finds match', () => {
+test('finds match', async () => {
   expect(
-    find(
-      (function* () {
+    await find(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
@@ -12,10 +12,10 @@ test('finds match', () => {
   ).toEqual({ name: 'bob', id: 2 })
 })
 
-test('returns undefined when not found', () => {
+test('returns undefined when not found', async () => {
   expect(
-    find(
-      (function* () {
+    await find(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
@@ -24,10 +24,10 @@ test('returns undefined when not found', () => {
   ).toBeUndefined()
 })
 
-test('finds by index', () => {
+test('finds by index', async () => {
   expect(
-    find(
-      (function* () {
+    await find(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })(),
@@ -36,10 +36,10 @@ test('finds by index', () => {
   ).toEqual({ name: 'bob', id: 2 })
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
       })()

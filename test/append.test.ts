@@ -1,13 +1,13 @@
-import { append, chain } from '../src/async-iterable-fns'
+import { append, chain, toArray } from '../src/async-iterable-fns'
 
-test('appends two iterators', () => {
+test('appends two iterators', async () => {
   expect(
-    Array.from(
+    await toArray(
       append(
-        (function* () {
+        (async function* () {
           yield 1
         })(),
-        (function* () {
+        (async function* () {
           yield 2
         })()
       )
@@ -15,15 +15,15 @@ test('appends two iterators', () => {
   ).toEqual([1, 2])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield 1
       })()
     )
       .append(
-        (function* () {
+        (async function* () {
           yield 2
         })()
       )

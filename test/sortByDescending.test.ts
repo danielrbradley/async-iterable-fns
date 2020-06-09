@@ -1,16 +1,14 @@
 import { sortByDescending, chain } from '../src/async-iterable-fns'
 
-test('by selected key', () => {
+test('by selected key', async () => {
   expect(
-    Array.from(
-      sortByDescending(
-        (function* () {
-          yield { name: 'amy', age: 21 }
-          yield { name: 'bob', age: 2 }
-          yield { name: 'cat', age: 18 }
-        })(),
-        (x) => x.age
-      )
+    await sortByDescending(
+      (async function* () {
+        yield { name: 'amy', age: 21 }
+        yield { name: 'bob', age: 2 }
+        yield { name: 'cat', age: 18 }
+      })(),
+      (x) => x.age
     )
   ).toEqual([
     { name: 'amy', age: 21 },
@@ -19,17 +17,15 @@ test('by selected key', () => {
   ])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', age: 21 }
         yield { name: 'bob', age: 2 }
         yield { name: 'cat', age: 18 }
       })()
-    )
-      .sortByDescending((x) => x.age)
-      .toArray()
+    ).sortByDescending((x) => x.age)
   ).toEqual([
     { name: 'amy', age: 21 },
     { name: 'cat', age: 18 },

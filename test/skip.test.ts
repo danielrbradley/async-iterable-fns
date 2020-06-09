@@ -1,10 +1,10 @@
-import { skip, chain } from '../src/async-iterable-fns'
+import { skip, chain, toArray } from '../src/async-iterable-fns'
 
-test('skipping none', () => {
+test('skipping none', async () => {
   expect(
-    Array.from(
+    await toArray(
       skip(
-        (function* () {
+        (async function* () {
           yield 1
           yield 2
           yield 3
@@ -16,11 +16,11 @@ test('skipping none', () => {
   ).toEqual([1, 2, 3, 4])
 })
 
-test('skipping some', () => {
+test('skipping some', async () => {
   expect(
-    Array.from(
+    await toArray(
       skip(
-        (function* () {
+        (async function* () {
           yield 1
           yield 2
           yield 3
@@ -32,11 +32,11 @@ test('skipping some', () => {
   ).toEqual([3, 4])
 })
 
-test('skipping all', () => {
+test('skipping all', async () => {
   expect(
-    Array.from(
+    await toArray(
       skip(
-        (function* () {
+        (async function* () {
           yield 1
           yield 2
           yield 3
@@ -48,11 +48,11 @@ test('skipping all', () => {
   ).toEqual([])
 })
 
-test('skipping more than count', () => {
+test('skipping more than count', async () => {
   expect(
-    Array.from(
+    await toArray(
       skip(
-        (function* () {
+        (async function* () {
           yield 1
           yield 2
           yield 3
@@ -64,10 +64,10 @@ test('skipping more than count', () => {
   ).toEqual([])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield 1
         yield 2
         yield 3

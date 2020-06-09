@@ -1,10 +1,10 @@
-import { distinctBy, chain } from '../src/async-iterable-fns'
+import { distinctBy, chain, toArray } from '../src/async-iterable-fns'
 
-test('ignores duplicates', () => {
+test('ignores duplicates', async () => {
   expect(
-    Array.from(
+    await toArray(
       distinctBy(
-        (function* () {
+        (async function* () {
           yield { name: 'amy', id: 1 }
           yield { name: 'bob', id: 2 }
           yield { name: 'bob', id: 3 }
@@ -20,11 +20,11 @@ test('ignores duplicates', () => {
   ])
 })
 
-test('using index', () => {
+test('using index', async () => {
   expect(
-    Array.from(
+    await toArray(
       distinctBy(
-        (function* () {
+        (async function* () {
           yield { name: 'amy', id: 1 }
           yield { name: 'bob', id: 2 }
           yield { name: 'bob', id: 3 }
@@ -39,10 +39,10 @@ test('using index', () => {
   ])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield { name: 'amy', id: 1 }
         yield { name: 'bob', id: 2 }
         yield { name: 'bob', id: 3 }

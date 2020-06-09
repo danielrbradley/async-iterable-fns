@@ -1,10 +1,10 @@
-import { distinct, chain } from '../src/async-iterable-fns'
+import { distinct, chain, toArray } from '../src/async-iterable-fns'
 
-test('duplicates', () => {
+test('duplicates', async () => {
   expect(
-    Array.from(
+    await toArray(
       distinct(
-        (function* () {
+        (async function* () {
           yield 'bob'
           yield 'cat'
           yield 'bob'
@@ -15,10 +15,10 @@ test('duplicates', () => {
   ).toEqual(['bob', 'cat', 'amy'])
 })
 
-test('chaining', () => {
+test('chaining', async () => {
   expect(
-    chain(
-      (function* () {
+    await chain(
+      (async function* () {
         yield 'bob'
         yield 'cat'
         yield 'bob'

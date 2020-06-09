@@ -1,9 +1,9 @@
 import { sum } from '../src/async-iterable-fns'
 
-test('numbers', () => {
+test('numbers', async () => {
   expect(
-    sum(
-      (function* () {
+    await sum(
+      (async function* () {
         yield 21
         yield 2
         yield 18
